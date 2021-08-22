@@ -1,0 +1,10 @@
+.container{
+  display: flex;
+}
+
+.container-centered{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 90%;kerning-mode: 45;
+}
