@@ -1,35 +1,36 @@
-import dotenv from 'dotenv';
-import mongoose from 'mongoose';
+const dotenv = require('dotenv');
+const {MongoClient} = require('mongodb');
 
 dotenv.config();
 
 const options = {
   useNewUrlParser: true,
-  useFindAndModify: false,
-  useCreateIndex: true,
   useUnifiedTopology: true,
-  autoIndex: false,
-  poolSize: 10,
-  bufferMaxEntries: 0
 };
 const {
-    MONGO_HOSTNAME,
-    MONGO_DB,
-    MONGO_PORT
+    MONGO_HOSTNAME='localhost',
+    MONGO_DB='sensor_data',
+    MONGO_PORT=27017
 } = process.env;
-const dbConnectionURL = {
-     // 'LOCAL_DB_URL': `mongodb://${MONGO_HOSTNAME}:${MONGO_PORT}/${MONGO_DB}?authSource=admin`,
-     'LOCAL_DB_URL': `mongodb://${MONGO_HOSTNAME}:${MONGO_PORT}/${MONGO_DB}?authSource=admin`,
-     'REMOTE_DB_URL': process.env.MONGODB_URI
-};
 
-mongoose.connect(dbConnectionURL.LOCAL_DB_URL, options);
+const mongoClient = new MongoClient(`mongodb://${MONGO_HOSTNAME}:${MONGO_PORT}/${MONGO_DB}?retryWrites=true&w=majority`, options);
 
-const db = mongoose.connection;
+mongoClient.connect().then(async ()=>{
+    console.log('DB Connected');
 
-db.on('error', console.error.bind(console, 'Mongodb Connection Error:' + dbConnectionURL.LOCALURL));
-db.once('open', () => {
-     console.log('Mongodb Connection Successful');
+    try {
+        //create a collection to enforce optimization on timeseries collection
+        await db.createCollection("sensorDataTimeSeries", {
+            timeseries: {
+                timeField: "timestamp",
+                metaField: "sensorId",
+                granularity: "seconds"
+            },
+        });
+    }
+    catch (e) {/*collection present*/}
 });
 
-export default db;
+const db = mongoClient.db('sensor_data');
+
+module.exports = db;
