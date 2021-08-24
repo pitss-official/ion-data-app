@@ -3,36 +3,34 @@ const path = require('path');
 const fs = require('fs');
 const guid = require('guid');
 const processFile = require("../logic/process-file");
+const Busboy = require('busboy');
 
 const router = express.Router();
 
 const db = require('../config/mongodb.config');
 const sensorDataTimeSeries = db.collection('sensorDataTimeSeries');
-const validateDataSubmitRequest = (req, res, next) => {
-    if (req.headers['content-type'] !== 'application/json') {
-        res.status(400).send({
-            error: 'Invalid File Format. Only json files are supported by this service.'
-        });
-        next(new Error('validationError'));
-    }
-    if (!req.query.serial) {
-        res.status(400).send({error: 'Serial is a mandatory param.'});
-        next(new Error('validationError'));
-    }
-    next();
-}
+
 router.route('/data')
-    .post(validateDataSubmitRequest, (req, res) => {
-        const id = req.query.serial;
+    .post((req, res) => {
         const requestId = guid.create();
-        const filePath = path.join(__dirname, '..', '..', 'uploads', `${id}-${requestId}.json`);
-        let fileStream = fs.createWriteStream(filePath);
-        req.pipe(fileStream);
-        req.on('end', async () => {
-            await fileStream.close();
-            processFile({filePath, id, requestId});
+        const busboy = new Busboy({ headers: req.headers });
+        let filePath, id;
+
+        req.pipe(busboy)
+
+        busboy.on('file', function(fieldname, file, filename, encoding, mimetype) {
+            if (mimetype!=='application/json'){
+                res.status(400).send({error:'File is expected to be a type of json'});
+                return;
+            }
+            id = req.query.serial || filename.slice(0,-5);
+            filePath = path.join(__dirname, '..', '..', 'uploads', `${id}-${requestId}.json`);
+            file.pipe(fs.createWriteStream(filePath));
+        });
+        busboy.on('finish', function() {
             res.status(202).send({status: 'File uploaded successfully. Processing Asynchronously.'});
-        })
+            processFile({filePath, id, requestId});
+        });
     })
     .get(async (req, res) => {
         const groupBy = (req.query.groupBy || ['year', 'month', 'day']);
