@@ -38,7 +38,7 @@ function UploadData() {
         <div align='center' className='file-upload'>
             <Form.Control className='file-select'  onChange={(e) => setFile(e.target.files[0])} type="file" id="files"/>
             <Form.Label htmlFor="files">
-                <Button disabled={!file} onClick={uploadWithFormData} className='file-upload btn btn-primary'>Upload File</Button>
+                <Button disabled={!file} onClick={uploadWithFormData} className='file-upload btn btn-primary'>Send</Button>
             </Form.Label>
         </div>
     );

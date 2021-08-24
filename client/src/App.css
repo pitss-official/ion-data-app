@@ -8,3 +8,23 @@
 .file-select{
     margin-right: 16px;
 }
+
+.loading-spinner{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.form-controls{
+    align-items: flex-start;
+    width: 50%;
+}
+.spacing-xs{
+    margin: 4px 0;
+}
+
+.file-upload-modal{
+    margin-top: 32px;
+}
